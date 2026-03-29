@@ -1,6 +1,7 @@
 #this is first version of the code. It is a simple command-line interface to interact with Google's Gemini LLM. The user can ask questions, and the script will send those questions to the Gemini API and print the responses. The API key is read from an environment variable or prompted from the user if not found.
 import os
 import requests
+import gradio as gr
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -13,7 +14,6 @@ def get_gemini_api_key():
 
 def ask_gemini(question, api_key):
     url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
-    #url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent'
     headers = {'Content-Type': 'application/json'}
     payload = {
         'contents': [{
@@ -32,6 +32,18 @@ def ask_gemini(question, api_key):
             return 'No answer found.'
     else:
         return f'Error: {response.status_code} - {response.text}'
+    
+def gradio_chatbot_interface():
+    api_key = get_gemini_api_key()
+    def chat_fn(message, history):
+        answer = ask_gemini(message, api_key)
+        print(f"Gemini API response: {answer}")  # Print Gemini API response
+        return answer
+    gr.ChatInterface(
+        fn=chat_fn,
+        title="Gemini 2.5 Flash Chatbot built using gradio",
+        description="Ask questions to Gemini LLM (2.5 Flash) via Gradio chatbot interface."
+    ).launch()
 
 def main():
     api_key = get_gemini_api_key()
@@ -45,4 +57,8 @@ def main():
         print(f'Gemini: {answer}\n')
 
 if __name__ == '__main__':
-    main()
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == 'gradio':
+        gradio_chatbot_interface()
+    else:
+        main()
